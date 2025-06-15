@@ -27,8 +27,8 @@ let schedule_light = 1;
 
 let schedule_light_state = 0;
 let schedule_fan_state = 0;
-let cron_statement_fan = "*/1 * * * *";
-let cron_statement_light = "*/1 * * * *";
+let cron_statement_fan = "*/10 * * * *";
+let cron_statement_light = "*/10 * * * *";
 
 let current_ws = null;
 let fan_cron_started = false;
@@ -157,6 +157,10 @@ wss.on("connection", (ws) => {
         else if (msg === "FAN:OFF") fan_state = 0;
         else if (msg === "LIGHT:ON") light_state = 1;
         else if (msg === "LIGHT:OFF") light_state = 0;
+    });
+     ws.on("close", () => {
+        esp32_connected = 0;
+        console.log("ESP32 WebSocket disconnected ❌");
     });
 });
 
