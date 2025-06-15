@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Device Controller</title>
+</head>
+<body>
+  <h1>ESP32 Control Panel</h1>
+  <button onclick="send('FAN:ON')">FAN ON</button>
+  <button onclick="send('FAN:OFF')">FAN OFF</button>
+  <button onclick="send('LIGHT:ON')">LIGHT ON</button>
+  <button onclick="send('LIGHT:OFF')">LIGHT OFF</button>
+  <p id="response"></p>
+
+  <script>
+    async function send(msg) {
+      const res = await fetch(`/set_state/${msg}`);
+      const text = await res.text();
+      document.getElementById('response').innerText = text;
+    }
+  </script>
+</body>
+</html>

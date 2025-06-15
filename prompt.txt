@@ -1,0 +1,50 @@
+GOAL : So im building a home autmation system with scheduler and real time turn on and off from my phone and a IR remote on the ESP32 completely from stretch . Im using 2 relay just to control my light and fun. And a DHT11 sensor 
+
+RETURN FORMAT : I want the code for everything backend:nodeJS esp32:c
+
+TECH STACK : 
+	Backend : nodejs
+	communication : websockets
+	Database : sql3lite
+	Frontend : basic HTML
+
+ARCTITECTURE : 
+	lets first discuss the components in our system (ESP32 , BE , FE)
+	
+	so all these 3 components (ESP32 , BE , FE) live in a web socket channel and communicate through the message system of 
+	
+	message :
+		role : <ESP32, BE ,FE>
+		per : <update , get>
+		to : <ESP32, BE ,FE>
+		date ? : 
+	eg: 
+	
+	message : 
+		role : ESP32
+		per: update 
+		to : BE
+		data : temp:27C
+	
+	now table schema for the database is as follows:
+	table ESP32 : 
+		humidity 
+		temp
+		connected 
+	table light :
+		state
+		schedule 
+		at_schedule_state
+	table fan :
+		state
+		schedule 
+		at_schedule_state
+	
+	now here the flow of the system when were the ESP32 is connected to wifi and is reading reading from the DHT11 it sends the backend a message 	pre:update and data is connected and then the backend updates the table ESP32 and then emits the same data to the FE(if connected) and then the 	next steps are as follows the ESP32 stores the temp and humidity And if it records a change in every 5 seconds then it emits the date to the BE 	and be changes the db emits the same to the FE . Same way if someone changes the esp32 relay state using IR remote the same is emitted and 	updated and if the someone changes it from the FE the same is emitted from FE to BE(DB update) to ESP32(to change the relay state) and so on.
+
+	Scheduler:
+		
+		for this the be checks every 5 mins for if the time has hit the spot and if it has then emits a message to the esp32 the state for example 		if I want the fan to be off from 5AM to 6AM and if the fan is off then the esp32 does nothing but if its on then it turns it off
+
+
+
