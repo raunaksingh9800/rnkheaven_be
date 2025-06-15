@@ -161,7 +161,7 @@ wss.on("connection", (ws) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
     const ip = getLocalIP();
     console.log(`Server running at http://localhost:${PORT}`);
     console.log(`Accessible on network: http://${ip}:${PORT}`);
