@@ -35,16 +35,15 @@ let fan_cron_started = false;
 let light_cron_started = false;
 
 const light_shd = (ws) => {
-    light_state = (schedule_light_state);
-        console.log(`LIGHT:${(light_state)? "ON" : "OFF"}`)
-
-    if (ws?.readyState === WebSocket.OPEN) ws.send(`LIGHT:${(light_state)? "ON" : "OFF"}`);
+    light_state = schedule_light_state;
+    console.log(`LIGHT:${light_state ? "ON" : "OFF"}`);
+    if (ws?.readyState === WebSocket.OPEN) ws.send(`LIGHT:${light_state ? "ON" : "OFF"}`);
 };
 
 const fan_shd = (ws) => {
     fan_state = schedule_fan_state;
-        console.log(`FAN:${(fan_state)? "ON" : "OFF"}`)
-    if (ws?.readyState === WebSocket.OPEN) ws.send(`FAN:${(fan_state)? "ON" : "OFF"}`);
+    console.log(`FAN:${fan_state ? "ON" : "OFF"}`);
+    if (ws?.readyState === WebSocket.OPEN) ws.send(`FAN:${fan_state ? "ON" : "OFF"}`);
 };
 
 const app = express();
@@ -65,11 +64,8 @@ app.get("/set_state/:msg", (req, res) => {
     res.send(`Sent: ${msg}`);
 });
 
-
-// API to set fan schedule state and cron expression
 app.post("/set_shd_fan", express.json(), (req, res) => {
     const { shd_state, cron_expression } = req.body;
-
     if (typeof shd_state !== "number" || (shd_state !== 0 && shd_state !== 1)) {
         return res.status(400).send("Invalid shd_state");
     }
@@ -80,9 +76,6 @@ app.post("/set_shd_fan", express.json(), (req, res) => {
     schedule_fan_state = shd_state;
     cron_statement_fan = cron_expression;
 
-    // Optionally restart the cron job if needed
-    // (for simplicity, not stopping previous jobs here)
-
     res.send({
         message: "Fan schedule updated",
         schedule_fan_state,
@@ -90,10 +83,8 @@ app.post("/set_shd_fan", express.json(), (req, res) => {
     });
 });
 
-
 app.post("/set_shd_light", express.json(), (req, res) => {
     const { shd_state, cron_expression } = req.body;
-
     if (typeof shd_state !== "number" || (shd_state !== 0 && shd_state !== 1)) {
         return res.status(400).send("Invalid shd_state");
     }
@@ -104,16 +95,12 @@ app.post("/set_shd_light", express.json(), (req, res) => {
     schedule_light_state = shd_state;
     cron_statement_light = cron_expression;
 
-    // Optionally restart the cron job if needed
-    // (for simplicity, not stopping previous jobs here)
-
     res.send({
-        message: "Fan schedule updated",
+        message: "Light schedule updated",
         schedule_light_state,
         cron_statement_light
     });
 });
-
 
 app.get("/db", (req, res) => {
     res.json({
@@ -138,8 +125,29 @@ app.get("/", (req, res) => {
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
+// === HEARTBEAT SETUP ===
+const heartbeatInterval = setInterval(() => {
+    wss.clients.forEach((ws) => {
+        if (ws.isAlive === false) {
+            console.log("ESP32 heartbeat failed. Terminating...");
+            esp32_connected = 0;
+            return ws.terminate();
+        }
+
+        ws.isAlive = false;
+        ws.ping();
+    });
+}, 10000); // every 10 seconds
+
 wss.on("connection", (ws) => {
     current_ws = ws;
+    ws.isAlive = true;
+
+    ws.on("pong", () => {
+        ws.isAlive = true;
+        esp32_connected = 1;
+    });
+
     ws.on("message", (msg) => {
         esp32_connected = 1;
 
@@ -158,7 +166,8 @@ wss.on("connection", (ws) => {
         else if (msg === "LIGHT:ON") light_state = 1;
         else if (msg === "LIGHT:OFF") light_state = 0;
     });
-     ws.on("close", () => {
+
+    ws.on("close", () => {
         esp32_connected = 0;
         console.log("ESP32 WebSocket disconnected ❌");
     });
@@ -170,13 +179,3 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running at http://localhost:${PORT}`);
     console.log(`Accessible on network: http://${ip}:${PORT}`);
 });
-
-
-// ======= index.html =======
-// Save this in the same folder as backend.js
-
-/* index.html */
-
-/*
-
-*/
