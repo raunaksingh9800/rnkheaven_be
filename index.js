@@ -65,8 +65,70 @@ app.get("/set_state/:msg", (req, res) => {
     res.send(`Sent: ${msg}`);
 });
 
+
+// API to set fan schedule state and cron expression
+app.post("/set_shd_fan", express.json(), (req, res) => {
+    const { shd_state, cron_expression } = req.body;
+
+    if (typeof shd_state !== "number" || (shd_state !== 0 && shd_state !== 1)) {
+        return res.status(400).send("Invalid shd_state");
+    }
+    if (typeof cron_expression !== "string" || !cron.validate(cron_expression)) {
+        return res.status(400).send("Invalid cron_expression");
+    }
+
+    schedule_fan_state = shd_state;
+    cron_statement_fan = cron_expression;
+
+    // Optionally restart the cron job if needed
+    // (for simplicity, not stopping previous jobs here)
+
+    res.send({
+        message: "Fan schedule updated",
+        schedule_fan_state,
+        cron_statement_fan
+    });
+});
+
+
+app.post("/set_shd_light", express.json(), (req, res) => {
+    const { shd_state, cron_expression } = req.body;
+
+    if (typeof shd_state !== "number" || (shd_state !== 0 && shd_state !== 1)) {
+        return res.status(400).send("Invalid shd_state");
+    }
+    if (typeof cron_expression !== "string" || !cron.validate(cron_expression)) {
+        return res.status(400).send("Invalid cron_expression");
+    }
+
+    schedule_light_state = shd_state;
+    cron_statement_light = cron_expression;
+
+    // Optionally restart the cron job if needed
+    // (for simplicity, not stopping previous jobs here)
+
+    res.send({
+        message: "Fan schedule updated",
+        schedule_light_state,
+        cron_statement_light
+    });
+});
+
+
 app.get("/db", (req, res) => {
-    res.send(esp32_connected.toString());
+    res.json({
+        esp32_connected: { value: esp32_connected, description: "Is ESP32 connected (0/1)" },
+        fan_state: { value: fan_state, description: "Current fan state (0=OFF, 1=ON)" },
+        light_state: { value: light_state, description: "Current light state (0=OFF, 1=ON)" },
+        schedule_fan: { value: schedule_fan, description: "Is fan scheduling enabled (0/1)" },
+        schedule_light: { value: schedule_light, description: "Is light scheduling enabled (0/1)" },
+        schedule_light_state: { value: schedule_light_state, description: "Scheduled state for light (0=OFF, 1=ON)" },
+        schedule_fan_state: { value: schedule_fan_state, description: "Scheduled state for fan (0=OFF, 1=ON)" },
+        cron_statement_fan: { value: cron_statement_fan, description: "Fan cron schedule expression" },
+        cron_statement_light: { value: cron_statement_light, description: "Light cron schedule expression" },
+        fan_cron_started: { value: fan_cron_started, description: "Is fan cron job started (true/false)" },
+        light_cron_started: { value: light_cron_started, description: "Is light cron job started (true/false)" }
+    });
 });
 
 app.get("/", (req, res) => {
