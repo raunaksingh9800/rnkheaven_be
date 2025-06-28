@@ -1,22 +1,1001 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Device Controller</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Home Controller</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .connection-status {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #e74c3c;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: #2ecc71;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .devices-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .device-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .device-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .device-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f8f9fa;
+        }
+
+        .device-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 24px;
+        }
+
+        .fan-icon {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .light-icon {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+        }
+
+        .device-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .device-controls {
+            margin-bottom: 25px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-label {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #555;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-on {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+        }
+
+        .btn-on:hover {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
+        }
+
+        .btn-off {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .btn-off:hover {
+            background: linear-gradient(135deg, #c0392b, #a93226);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        .schedule-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .schedule-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .schedule-title {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: #ddd;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: #2ecc71;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(30px);
+        }
+
+        .schedule-inputs {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-group label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-group select,
+        .input-group input {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group select:focus,
+        .input-group input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .btn-schedule {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-schedule:hover {
+            background: linear-gradient(135deg, #8e44ad, #7d3c98);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(155, 89, 182, 0.4);
+        }
+
+        .status-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-top: 30px;
+        }
+
+        .status-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .status-item {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .status-item:hover {
+            transform: scale(1.05);
+        }
+
+        .status-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 5px;
+        }
+
+        .status-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+
+        .notification.error {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .schedule-time-inputs,
+        .schedule-interval-inputs,
+        .schedule-preset-inputs,
+        .schedule-custom-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .schedule-custom-inputs {
+            grid-template-columns: 1fr;
+        }
+
+        .generated-cron {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e8f5e8;
+            border-radius: 6px;
+            border-left: 4px solid #2ecc71;
+        }
+
+        .generated-cron label {
+            font-size: 12px;
+            color: #27ae60;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .generated-cron code {
+            background: #2ecc71;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+
+        .cron-help {
+            margin-top: 5px;
+        }
+
+        .cron-help small {
+            color: #666;
+            font-style: italic;
+        }
+            .devices-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .schedule-inputs {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .status-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>ESP32 Control Panel</h1>
-  <button onclick="send('FAN:ON')">FAN ON</button>
-  <button onclick="send('FAN:OFF')">FAN OFF</button>
-  <button onclick="send('LIGHT:ON')">LIGHT ON</button>
-  <button onclick="send('LIGHT:OFF')">LIGHT OFF</button>
-  <p id="response"></p>
+    <div class="container">
+        <div class="header">
+            <h1>Smart Home Controller</h1>
+            <div class="connection-status">
+                <div class="status-dot" id="connectionDot"></div>
+                <span id="connectionText">Disconnected</span>
+            </div>
+        </div>
 
-  <script>
-    async function send(msg) {
-      const res = await fetch(`/set_state/${msg}`);
-      const text = await res.text();
-      document.getElementById('response').innerText = text;
-    }
-  </script>
+        <div class="main-content">
+            <div class="devices-grid">
+                <!-- Fan Control -->
+                <div class="device-card">
+                    <div class="device-header">
+                        <div class="device-icon fan-icon">🌀</div>
+                        <div class="device-title">Smart Fan</div>
+                    </div>
+                    
+                    <div class="device-controls">
+                        <div class="control-group">
+                            <div class="control-label">Manual Control</div>
+                            <div class="button-group">
+                                <button class="btn btn-on" onclick="sendCommand('FAN:ON')">Turn On</button>
+                                <button class="btn btn-off" onclick="sendCommand('FAN:OFF')">Turn Off</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="schedule-section">
+                        <div class="schedule-header">
+                            <div class="schedule-title">Schedule Control</div>
+                            <div class="toggle-switch" id="fanScheduleToggle" onclick="toggleSchedule('fan')">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="schedule-inputs">
+                            <div class="input-group">
+                                <label>Action</label>
+                                <select id="fanScheduleState">
+                                    <option value="0">Turn Off</option>
+                                    <option value="1">Turn On</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Schedule Type</label>
+                                <select id="fanScheduleType" onchange="updateScheduleInputs('fan')">
+                                    <option value="time">Specific Time</option>
+                                    <option value="interval">Interval</option>
+                                    <option value="preset">Quick Presets</option>
+                                    <option value="custom">Custom Cron</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Time-based scheduling -->
+                        <div class="schedule-time-inputs" id="fanTimeInputs">
+                            <div class="input-group">
+                                <label>Time (24hr format)</label>
+                                <input type="time" id="fanTime" value="08:00">
+                            </div>
+                            <div class="input-group">
+                                <label>Days</label>
+                                <select id="fanDays">
+                                    <option value="*">Every Day</option>
+                                    <option value="1-5">Weekdays (Mon-Fri)</option>
+                                    <option value="0,6">Weekends (Sat-Sun)</option>
+                                    <option value="1">Monday</option>
+                                    <option value="2">Tuesday</option>
+                                    <option value="3">Wednesday</option>
+                                    <option value="4">Thursday</option>
+                                    <option value="5">Friday</option>
+                                    <option value="6">Saturday</option>
+                                    <option value="0">Sunday</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Interval-based scheduling -->
+                        <div class="schedule-interval-inputs" id="fanIntervalInputs" style="display: none;">
+                            <div class="input-group">
+                                <label>Repeat Every</label>
+                                <input type="number" id="fanIntervalValue" min="1" max="59" value="10">
+                            </div>
+                            <div class="input-group">
+                                <label>Unit</label>
+                                <select id="fanIntervalUnit">
+                                    <option value="minutes">Minutes</option>
+                                    <option value="hours">Hours</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Preset scheduling -->
+                        <div class="schedule-preset-inputs" id="fanPresetInputs" style="display: none;">
+                            <div class="input-group">
+                                <label>Quick Presets</label>
+                                <select id="fanPreset" onchange="applyPreset('fan')">
+                                    <option value="">Select a preset...</option>
+                                    <option value="0 8 * * *">Daily at 8:00 AM</option>
+                                    <option value="0 18 * * *">Daily at 6:00 PM</option>
+                                    <option value="0 22 * * *">Daily at 10:00 PM</option>
+                                    <option value="0 8 * * 1-5">Weekdays at 8:00 AM</option>
+                                    <option value="0 18 * * 1-5">Weekdays at 6:00 PM</option>
+                                    <option value="*/30 * * * *">Every 30 minutes</option>
+                                    <option value="0 */2 * * *">Every 2 hours</option>
+                                    <option value="0 0 * * 0">Weekly (Sundays at midnight)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Custom cron input -->
+                        <div class="schedule-custom-inputs" id="fanCustomInputs" style="display: none;">
+                            <div class="input-group">
+                                <label>Cron Expression</label>
+                                <input type="text" id="fanCronExpression" placeholder="*/10 * * * *" value="*/10 * * * *">
+                            </div>
+                            <div class="cron-help">
+                                <small>Format: minute hour day month day-of-week</small>
+                            </div>
+                        </div>
+
+                        <div class="generated-cron" id="fanGeneratedCron">
+                            <label>Generated Expression:</label>
+                            <code id="fanCronDisplay">0 8 * * *</code>
+                        </div>
+                        <button class="btn-schedule" onclick="updateSchedule('fan')" style="margin-top: 15px; width: 100%;">
+                            Update Schedule
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Light Control -->
+                <div class="device-card">
+                    <div class="device-header">
+                        <div class="device-icon light-icon">💡</div>
+                        <div class="device-title">Smart Light</div>
+                    </div>
+                    
+                    <div class="device-controls">
+                        <div class="control-group">
+                            <div class="control-label">Manual Control</div>
+                            <div class="button-group">
+                                <button class="btn btn-on" onclick="sendCommand('LIGHT:ON')">Turn On</button>
+                                <button class="btn btn-off" onclick="sendCommand('LIGHT:OFF')">Turn Off</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="schedule-section">
+                        <div class="schedule-header">
+                            <div class="schedule-title">Schedule Control</div>
+                            <div class="toggle-switch" id="lightScheduleToggle" onclick="toggleSchedule('light')">
+                                <div class="toggle-slider"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="schedule-inputs">
+                            <div class="input-group">
+                                <label>Action</label>
+                                <select id="lightScheduleState">
+                                    <option value="0">Turn Off</option>
+                                    <option value="1">Turn On</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Schedule Type</label>
+                                <select id="lightScheduleType" onchange="updateScheduleInputs('light')">
+                                    <option value="time">Specific Time</option>
+                                    <option value="interval">Interval</option>
+                                    <option value="preset">Quick Presets</option>
+                                    <option value="custom">Custom Cron</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Time-based scheduling -->
+                        <div class="schedule-time-inputs" id="lightTimeInputs">
+                            <div class="input-group">
+                                <label>Time (24hr format)</label>
+                                <input type="time" id="lightTime" value="18:00">
+                            </div>
+                            <div class="input-group">
+                                <label>Days</label>
+                                <select id="lightDays">
+                                    <option value="*">Every Day</option>
+                                    <option value="1-5">Weekdays (Mon-Fri)</option>
+                                    <option value="0,6">Weekends (Sat-Sun)</option>
+                                    <option value="1">Monday</option>
+                                    <option value="2">Tuesday</option>
+                                    <option value="3">Wednesday</option>
+                                    <option value="4">Thursday</option>
+                                    <option value="5">Friday</option>
+                                    <option value="6">Saturday</option>
+                                    <option value="0">Sunday</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Interval-based scheduling -->
+                        <div class="schedule-interval-inputs" id="lightIntervalInputs" style="display: none;">
+                            <div class="input-group">
+                                <label>Repeat Every</label>
+                                <input type="number" id="lightIntervalValue" min="1" max="59" value="10">
+                            </div>
+                            <div class="input-group">
+                                <label>Unit</label>
+                                <select id="lightIntervalUnit">
+                                    <option value="minutes">Minutes</option>
+                                    <option value="hours">Hours</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Preset scheduling -->
+                        <div class="schedule-preset-inputs" id="lightPresetInputs" style="display: none;">
+                            <div class="input-group">
+                                <label>Quick Presets</label>
+                                <select id="lightPreset" onchange="applyPreset('light')">
+                                    <option value="">Select a preset...</option>
+                                    <option value="0 8 * * *">Daily at 8:00 AM</option>
+                                    <option value="0 18 * * *">Daily at 6:00 PM</option>
+                                    <option value="0 22 * * *">Daily at 10:00 PM</option>
+                                    <option value="0 8 * * 1-5">Weekdays at 8:00 AM</option>
+                                    <option value="0 18 * * 1-5">Weekdays at 6:00 PM</option>
+                                    <option value="*/30 * * * *">Every 30 minutes</option>
+                                    <option value="0 */2 * * *">Every 2 hours</option>
+                                    <option value="0 0 * * 0">Weekly (Sundays at midnight)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Custom cron input -->
+                        <div class="schedule-custom-inputs" id="lightCustomInputs" style="display: none;">
+                            <div class="input-group">
+                                <label>Cron Expression</label>
+                                <input type="text" id="lightCronExpression" placeholder="*/10 * * * *" value="*/10 * * * *">
+                            </div>
+                            <div class="cron-help">
+                                <small>Format: minute hour day month day-of-week</small>
+                            </div>
+                        </div>
+
+                        <div class="generated-cron" id="lightGeneratedCron">
+                            <label>Generated Expression:</label>
+                            <code id="lightCronDisplay">0 18 * * *</code>
+                        </div>
+                        <button class="btn-schedule" onclick="updateSchedule('light')" style="margin-top: 15px; width: 100%;">
+                            Update Schedule
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-panel">
+                <div class="status-title">System Status</div>
+                <div class="status-grid">
+                    <div class="status-item">
+                        <div class="status-value" id="esp32Status">❌</div>
+                        <div class="status-label">ESP32 Connection</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-value" id="fanStatus">OFF</div>
+                        <div class="status-label">Fan Status</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-value" id="lightStatus">OFF</div>
+                        <div class="status-label">Light Status</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-value" id="fanScheduleStatus">❌</div>
+                        <div class="status-label">Fan Schedule</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-value" id="lightScheduleStatus">❌</div>
+                        <div class="status-label">Light Schedule</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        let systemData = {};
+
+        // Convert 24-hour time to cron expression
+        function timeToCron(time, days = '*') {
+            const [hours, minutes] = time.split(':');
+            return `${parseInt(minutes)} ${parseInt(hours)} * * ${days}`;
+        }
+
+        // Convert interval to cron expression
+        function intervalToCron(value, unit) {
+            if (unit === 'minutes') {
+                return `*/${value} * * * *`;
+            } else if (unit === 'hours') {
+                return `0 */${value} * * *`;
+            }
+            return `*/${value} * * * *`;
+        }
+
+        // Update schedule input visibility based on type
+        function updateScheduleInputs(device) {
+            const scheduleType = document.getElementById(`${device}ScheduleType`).value;
+            
+            // Hide all input sections
+            document.getElementById(`${device}TimeInputs`).style.display = 'none';
+            document.getElementById(`${device}IntervalInputs`).style.display = 'none';
+            document.getElementById(`${device}PresetInputs`).style.display = 'none';
+            document.getElementById(`${device}CustomInputs`).style.display = 'none';
+            
+            // Show selected input section
+            switch(scheduleType) {
+                case 'time':
+                    document.getElementById(`${device}TimeInputs`).style.display = 'grid';
+                    updateCronFromTime(device);
+                    break;
+                case 'interval':
+                    document.getElementById(`${device}IntervalInputs`).style.display = 'grid';
+                    updateCronFromInterval(device);
+                    break;
+                case 'preset':
+                    document.getElementById(`${device}PresetInputs`).style.display = 'grid';
+                    break;
+                case 'custom':
+                    document.getElementById(`${device}CustomInputs`).style.display = 'grid';
+                    updateCronFromCustom(device);
+                    break;
+            }
+        }
+
+        // Update cron display from time inputs
+        function updateCronFromTime(device) {
+            const time = document.getElementById(`${device}Time`).value;
+            const days = document.getElementById(`${device}Days`).value;
+            const cronExpression = timeToCron(time, days);
+            document.getElementById(`${device}CronDisplay`).textContent = cronExpression;
+        }
+
+        // Update cron display from interval inputs
+        function updateCronFromInterval(device) {
+            const value = document.getElementById(`${device}IntervalValue`).value;
+            const unit = document.getElementById(`${device}IntervalUnit`).value;
+            const cronExpression = intervalToCron(value, unit);
+            document.getElementById(`${device}CronDisplay`).textContent = cronExpression;
+        }
+
+        // Update cron display from custom input
+        function updateCronFromCustom(device) {
+            const cronExpression = document.getElementById(`${device}CronExpression`).value;
+            document.getElementById(`${device}CronDisplay`).textContent = cronExpression;
+        }
+
+        // Apply preset cron expression
+        function applyPreset(device) {
+            const preset = document.getElementById(`${device}Preset`).value;
+            if (preset) {
+                document.getElementById(`${device}CronDisplay`).textContent = preset;
+            }
+        }
+
+        // Get current cron expression for device
+        function getCurrentCronExpression(device) {
+            const scheduleType = document.getElementById(`${device}ScheduleType`).value;
+            
+            switch(scheduleType) {
+                case 'time':
+                    const time = document.getElementById(`${device}Time`).value;
+                    const days = document.getElementById(`${device}Days`).value;
+                    return timeToCron(time, days);
+                case 'interval':
+                    const value = document.getElementById(`${device}IntervalValue`).value;
+                    const unit = document.getElementById(`${device}IntervalUnit`).value;
+                    return intervalToCron(value, unit);
+                case 'preset':
+                    return document.getElementById(`${device}Preset`).value;
+                case 'custom':
+                    return document.getElementById(`${device}CronExpression`).value;
+                default:
+                    return '*/10 * * * *';
+            }
+        }
+        async function init() {
+            await fetchSystemStatus();
+            updateUI();
+            
+            // Auto-refresh every 5 seconds
+            setInterval(fetchSystemStatus, 5000);
+        }
+
+        // Fetch system status from backend
+        async function fetchSystemStatus() {
+            try {
+                const response = await fetch('/db');
+                const data = await response.json();
+                systemData = data;
+                updateConnectionStatus(data.esp32_connected.value);
+                updateUI();
+            } catch (error) {
+                console.error('Error fetching system status:', error);
+                updateConnectionStatus(0);
+            }
+        }
+
+        // Update connection status indicator
+        function updateConnectionStatus(connected) {
+            const dot = document.getElementById('connectionDot');
+            const text = document.getElementById('connectionText');
+            
+            if (connected) {
+                dot.classList.add('connected');
+                text.textContent = 'Connected';
+            } else {
+                dot.classList.remove('connected');
+                text.textContent = 'Disconnected';
+            }
+        }
+
+        // Update UI based on system data
+        function updateUI() {
+            if (!systemData) return;
+
+            // Update status display
+            document.getElementById('esp32Status').textContent = systemData.esp32_connected?.value ? '✅' : '❌';
+            document.getElementById('fanStatus').textContent = systemData.fan_state?.value ? 'ON' : 'OFF';
+            document.getElementById('lightStatus').textContent = systemData.light_state?.value ? 'ON' : 'OFF';
+            document.getElementById('fanScheduleStatus').textContent = systemData.schedule_fan?.value ? '✅' : '❌';
+            document.getElementById('lightScheduleStatus').textContent = systemData.schedule_light?.value ? '✅' : '❌';
+
+            // Update schedule toggles
+            const fanToggle = document.getElementById('fanScheduleToggle');
+            const lightToggle = document.getElementById('lightScheduleToggle');
+            
+            if (systemData.schedule_fan?.value) {
+                fanToggle.classList.add('active');
+            } else {
+                fanToggle.classList.remove('active');
+            }
+            
+            if (systemData.schedule_light?.value) {
+                lightToggle.classList.add('active');
+            } else {
+                lightToggle.classList.remove('active');
+            }
+
+            // Update schedule inputs
+            if (systemData.schedule_fan_state !== undefined) {
+                document.getElementById('fanScheduleState').value = systemData.schedule_fan_state.value;
+            }
+            if (systemData.schedule_light_state !== undefined) {
+                document.getElementById('lightScheduleState').value = systemData.schedule_light_state.value;
+            }
+            if (systemData.cron_statement_fan) {
+                document.getElementById('fanCronExpression').value = systemData.cron_statement_fan.value;
+                document.getElementById('fanCronDisplay').textContent = systemData.cron_statement_fan.value;
+            }
+            if (systemData.cron_statement_light) {
+                document.getElementById('lightCronExpression').value = systemData.cron_statement_light.value;
+                document.getElementById('lightCronDisplay').textContent = systemData.cron_statement_light.value;
+            }
+        }
+
+        // Send manual control command
+        async function sendCommand(command) {
+            try {
+                const response = await fetch(`/set_state/${command}`);
+                const text = await response.text();
+                
+                if (response.ok) {
+                    showNotification(`✅ ${text}`, 'success');
+                    await fetchSystemStatus(); // Refresh status
+                } else {
+                    showNotification(`❌ ${text}`, 'error');
+                }
+            } catch (error) {
+                showNotification('❌ Connection error', 'error');
+                console.error('Error sending command:', error);
+            }
+        }
+
+        // Toggle schedule on/off
+        function toggleSchedule(device) {
+            const toggle = document.getElementById(`${device}ScheduleToggle`);
+            const isActive = toggle.classList.contains('active');
+            
+            if (isActive) {
+                toggle.classList.remove('active');
+            } else {
+                toggle.classList.add('active');
+            }
+            
+            // Note: This is just visual feedback. The actual schedule enable/disable
+            // would need to be implemented in the backend with additional endpoints.
+            showNotification(`${device.charAt(0).toUpperCase() + device.slice(1)} schedule ${isActive ? 'disabled' : 'enabled'}`, 'success');
+        }
+
+        // Update device schedule
+        async function updateSchedule(device) {
+            const stateElement = document.getElementById(`${device}ScheduleState`);
+            const cronExpression = getCurrentCronExpression(device);
+            
+            if (!cronExpression) {
+                showNotification('❌ Please enter a valid schedule', 'error');
+                return;
+            }
+            
+            const scheduleData = {
+                shd_state: parseInt(stateElement.value),
+                cron_expression: cronExpression
+            };
+
+            try {
+                const response = await fetch(`/set_shd_${device}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(scheduleData)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showNotification(`✅ ${result.message}`, 'success');
+                    await fetchSystemStatus(); // Refresh status
+                } else {
+                    showNotification(`❌ ${result}`, 'error');
+                }
+            } catch (error) {
+                showNotification('❌ Failed to update schedule', 'error');
+                console.error('Error updating schedule:', error);
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
 </body>
 </html>
